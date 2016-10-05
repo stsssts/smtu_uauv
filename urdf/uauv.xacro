@@ -10,8 +10,8 @@
 
   <gazebo>
     <!-- Freefloating gazebo plugin -->
-    <plugin name="freefloating_gazebo_control" 
-            filename="libfreefloating_gazebo_control.so">
+    <plugin name="smtu_freefloating_gazebo_control" 
+            filename="smtu_libfreefloating_gazebo_control.so">
       <switchService>switch</switchService>
       <updateRate>100</updateRate>
       <link>base_link</link>
@@ -75,7 +75,6 @@
 
     <buoyancy>
       <variable/>
-      <compensation>1.01</compensation>
       <origin xyz= "0 0 0"/>
       <limit radius=".1"/>
       <damping xyz="60 100 100" rpy="20 50 50"/>

@@ -5,7 +5,7 @@
     <arg name="gui" value="true" />
     <arg name="paused" value="true"/>
     <arg name="world_name" 
-      value="$(find freefloating_gazebo)/world/underwater.world"/>
+      value="$(find smtu_uauv)/world/underwater.world"/>
   </include>
 
 
