@@ -1,0 +1,84 @@
+<?xml version="1.0"?>
+<robot name="uauv" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:property name="PI" value="3.1415926535897931"/>
+
+  <!-- Body properties -->
+  <xacro:property name="body_mass"        value="10"/>
+  <xacro:property name="body_radius"      value="0.065"/>
+  <xacro:property name="body_length"      value="0.667"/>
+  <xacro:property name="X_cog"            value="-0.55"/>
+
+  <gazebo>
+    <!-- Freefloating gazebo plugin -->
+    <plugin name="freefloating_gazebo_control" 
+            filename="libfreefloating_gazebo_control.so">
+      <switchService>switch</switchService>
+      <updateRate>100</updateRate>
+      <link>base_link</link>
+
+      <!-- For each thruster, give the map to 
+           XYZ+RPY and the maximum effort -->
+      <thruster>
+        <map>0 0 -1 0 -0.20168 0</map>
+        <effort>30</effort>
+      </thruster>
+      <thruster>
+        <map>0 0 -1 0 0.10238 0</map>
+        <effort>30</effort>
+      </thruster>
+      <thruster>
+        <map>-1 0 0 0 0 0.05828</map>
+        <effort>30</effort>
+      </thruster>
+      <thruster>
+        <map>-1 0 0 0 0 -0.05828</map>
+        <effort>30</effort>
+      </thruster>
+    </plugin>
+
+    <plugin name="imu_plugin" filename="libgazebo_ros_imu.so">
+      <alwaysOn>true</alwaysOn>       
+      <bodyName>base_link</bodyName>
+      <topicName>imu_data</topicName>
+      <serviceName>imu_service</serviceName>
+      <gaussianNoise>0.1</gaussianNoise>
+      <updateRate>10.0</updateRate> 
+    </plugin>
+  </gazebo>
+
+  <link name="base_link">
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://smtu_uauv/objects/uauv.dae"/>
+      </geometry>
+    </visual>
+
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://smtu_uauv/objects/uauv.dae"/>
+      </geometry>
+    </collision>
+
+    <inertial>
+      <origin xyz="0 0 ${-body_radius}" rpy="0 ${-PI/2} 0"/>
+      <mass value="${body_mass}"/>
+      <inertia
+        ixx="${body_mass*(body_radius*body_radius/4+body_length*body_length/12)}"
+        ixy="0.0"
+        ixz="0.0"
+        iyy="${body_mass*(body_radius*body_radius/4+body_length*body_length/12)}"
+        iyz="0.0"
+        izz="${body_mass*body_radius*body_radius/2}"/>
+    </inertial>
+
+    <buoyancy>
+      <variable/>
+      <compensation>1.01</compensation>
+      <origin xyz= "0 0 0"/>
+      <limit radius=".1"/>
+      <damping xyz="60 100 100" rpy="20 50 50"/>
+    </buoyancy>
+  </link>
+</robot>
