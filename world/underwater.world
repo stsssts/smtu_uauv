@@ -6,7 +6,7 @@
     </include>
 
     <!-- buoyancy plugin -->
-    <plugin name="freefloating_gazebo_fluid" filename="libfreefloating_gazebo_fluid.so">
+    <plugin name="smtu_freefloating_gazebo_fluid" filename="libsmtu_freefloating_gazebo_fluid.so">
               <descriptionParam>robot_description</descriptionParam>
               <fluidTopic>current</fluidTopic>
               <alwaysOn>true</alwaysOn>
