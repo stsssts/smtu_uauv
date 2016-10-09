@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<robot name="buoyancy_joints">
+  <joint name="front">
+    <limit lower="0.0" upper="10.0"/>
+  </joint>
+  <joint name="rear">
+    <limit lower="0.0" upper="10.0"/>
+  </joint>
+</robot>

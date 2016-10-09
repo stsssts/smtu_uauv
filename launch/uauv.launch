@@ -3,7 +3,7 @@
   <!-- Launch Gazebo with underwater world -->
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
     <arg name="gui" value="true" />
-    <arg name="paused" value="true"/>
+    <arg name="paused" value="false"/>
     <arg name="world_name" 
       value="$(find smtu_uauv)/world/underwater.world"/>
   </include>
@@ -30,6 +30,8 @@
     <!--node name="pid_control" pkg="freefloating_gazebo"
              type="pid_control" output="screen"/-->
 
+
+
     <!-- Manual thrusetrs control -->
     <group ns="thrusters">
       <param name="robot_description" 
@@ -45,6 +47,20 @@
         <remap from="joint_states" to="/uauv/thruster_command"/>
       </node>
     </group>
+  </group>
+
+  <group ns="buoyants">
+    <param name="robot_description" 
+      command="$(find xacro)/xacro --inorder 
+      $(find smtu_uauv)/urdf/uauv_buoyancy_dummy.urdf"/>
+    <node name="joint_state_publisher"
+      pkg="joint_state_publisher"
+      type="joint_state_publisher"
+      respawn="true">
+
+      <param name="use_gui" value="True"/>
+      <remap from="joint_states" to="/gazebo/buoyancy_joints"/>        
+    </node>
   </group>
 
   <param name="terrain_description" 

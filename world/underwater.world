@@ -7,11 +7,11 @@
 
     <!-- buoyancy plugin -->
     <plugin name="smtu_freefloating_gazebo_fluid" filename="libsmtu_freefloating_gazebo_fluid.so">
-              <descriptionParam>robot_description</descriptionParam>
-              <fluidTopic>current</fluidTopic>
-              <alwaysOn>true</alwaysOn>
-              <surface>0 0 0</surface>
-              <updateRate>.001</updateRate>
-          </plugin>
+      <descriptionParam>robot_description</descriptionParam>
+      <fluidTopic>current</fluidTopic>
+      <alwaysOn>true</alwaysOn>
+      <surface>0 0 0</surface>
+      <updateRate>.001</updateRate>
+    </plugin>
   </world>
 </sdf>

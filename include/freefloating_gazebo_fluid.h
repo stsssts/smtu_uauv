@@ -7,7 +7,7 @@
 #include <geometry_msgs/Vector3.h>
 #include <geometry_msgs/Pose.h>
 #include <nav_msgs/Odometry.h>
-#include <std_msgs/Float32.h>
+#include <sensor_msgs/JointState.h>
 
 namespace gazebo
 {
@@ -44,6 +44,12 @@ private:
         ros::Publisher state_publisher;
     };
 
+    struct link_var
+    {
+      std::string link_name;
+      double buoyant_compensation;
+    };
+
     // parse a Vector3 string
     void ReadVector3(const std::string &_string, math::Vector3 &_vector);
     // parse a new model
@@ -53,7 +59,7 @@ private:
     // parse received fluid velocity message
     void FluidVelocityCallBack(const geometry_msgs::Vector3ConstPtr& _msg);
     // parse received buoyancy message
-    void BuoyancyCallBack(const std_msgs::Float32ConstPtr& _msg);
+    void BuoyancyCallBack(const sensor_msgs::JointStateConstPtr &_msg);
 
 private:
     // plugin options
@@ -71,8 +77,8 @@ private:
     std::vector<link_st> buoyant_links_;
     // models that have been parsed
     std::vector<model_st> parsed_models_;
-    // link with variable buoyancy
-    std::string variable_link_name_;
+    // links with variable buoyancy
+    std::vector<link_var> variable_links_;
 
     // subscriber to fluid velocity (defined in the world frame)
     ros::Subscriber fluid_velocity_subscriber_;
@@ -80,7 +86,6 @@ private:
 
     // subscriber to buoyanancy compensation
     ros::Subscriber buoyant_compensation_subscriber_;
-    double buoyant_compensation_;
 };
 GZ_REGISTER_WORLD_PLUGIN(FreeFloatingFluidPlugin)
 }

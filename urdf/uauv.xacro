@@ -8,10 +8,38 @@
   <xacro:property name="body_length"      value="0.667"/>
   <xacro:property name="X_cog"            value="-0.55"/>
 
+  <!-- Variable buoyancy link -->
+  <xacro:macro name="buoyancy_link" params="name xyz">
+
+    <joint name="${name}" type="revolute">
+      <parent link="base_link"/>
+      <child link="${name}"/>
+      <origin rpy="0 0 0" xyz="${xyz}"/>
+      <axis xyz="0 1 0"/>
+      <limit effort="0" velocity="5.0" lower="0" upper="0" />
+    </joint>
+
+    <link name="${name}">      
+      <buoyancy>
+        <variable compensation="3.0"/>
+      </buoyancy>
+      <inertial>
+        <mass value=".1"/>
+        <inertia
+          ixx=".1"
+          ixy="0.0"
+          ixz="0.0"
+          iyy=".1"
+          iyz="0.0"
+          izz=".1"/>
+      </inertial>  
+    </link>                 
+  </xacro:macro>                   
+
   <gazebo>
     <!-- Freefloating gazebo plugin -->
     <plugin name="smtu_freefloating_gazebo_control" 
-            filename="libsmtu_freefloating_gazebo_control.so">
+      filename="libsmtu_freefloating_gazebo_control.so">
       <switchService>switch</switchService>
       <updateRate>100</updateRate>
       <link>base_link</link>
@@ -34,15 +62,6 @@
         <map>-1 0 0 0 0 -0.05828</map>
         <effort>30</effort>
       </thruster>
-    </plugin>
-
-    <plugin name="imu_plugin" filename="libgazebo_ros_imu.so">
-      <alwaysOn>true</alwaysOn>       
-      <bodyName>base_link</bodyName>
-      <topicName>imu_data</topicName>
-      <serviceName>imu_service</serviceName>
-      <gaussianNoise>0.1</gaussianNoise>
-      <updateRate>10.0</updateRate> 
     </plugin>
   </gazebo>
 
@@ -74,10 +93,13 @@
     </inertial>
 
     <buoyancy>
-      <variable/>
+      <compensation>1.0</compensation>
       <origin xyz= "0 0 0"/>
       <limit radius=".1"/>
       <damping xyz="60 100 100" rpy="20 50 50"/>
     </buoyancy>
   </link>
+
+  <xacro:buoyancy_link name="front" xyz="-0.33 0 0"/>
+  <xacro:buoyancy_link name="rear" xyz="0.33 0 0"/>         
 </robot>

@@ -9,9 +9,7 @@
 #include <gazebo/physics/Link.hh>
 #include <gazebo/physics/World.hh>
 #include <gazebo/physics/PhysicsEngine.hh>
-#include <tinyxml.h>
 #include <urdf_parser/urdf_parser.h>
-#include <gazebo/math/Pose.hh>
 
 
 #include "freefloating_gazebo_fluid.h"
@@ -65,19 +63,20 @@ void FreeFloatingFluidPlugin::Load(physics::WorldPtr _world, sdf::ElementPtr _sd
     if(_sdf->HasElement("fluidTopic"))  fluid_topic = _sdf->Get<std::string>("fluidTopic");
 
     // initialize subscriber to water current
-    ros::SubscribeOptions ops = ros::SubscribeOptions::create<geometry_msgs::Vector3>(
-                fluid_topic, 1,
-                boost::bind(&FreeFloatingFluidPlugin::FluidVelocityCallBack, this, _1),
-                ros::VoidPtr(), &callback_queue_);
+    ros::SubscribeOptions ops;
+    ops = ros::SubscribeOptions::create<geometry_msgs::Vector3>(
+                    fluid_topic, 1,
+                    boost::bind(&FreeFloatingFluidPlugin::FluidVelocityCallBack, this, _1),
+                    ros::VoidPtr(), &callback_queue_);
     fluid_velocity_.Set(0,0,0);
     fluid_velocity_subscriber_ = rosnode_->subscribe(ops);
 
     // initialize subscriber to buoyancy
-    ros::SubscribeOptions buoy_ops = ros::SubscribeOptions::create<std_msgs::Float32>(
-                "buoyancy", 1,
-                boost::bind(&FreeFloatingFluidPlugin::BuoyancyCallBack, this, _1),
-                ros::VoidPtr(), &callback_queue_);
-    buoyant_compensation_ = 1.01;
+    ros::SubscribeOptions buoy_ops;
+    buoy_ops = ros::SubscribeOptions::create<sensor_msgs::JointState>(
+                    "buoyancy_joints", 1,
+                    boost::bind(&FreeFloatingFluidPlugin::BuoyancyCallBack, this, _1),
+                    ros::VoidPtr(), &callback_queue_);
     buoyant_compensation_subscriber_ = rosnode_->subscribe(buoy_ops);
 
     // Register plugin update
@@ -107,7 +106,7 @@ void FreeFloatingFluidPlugin::Update()
             if(world_->GetModel(i)->GetName() == model_it->name)
                 found = true;
         }
-        if(!found && !(world_->GetModel(i)->IsStatic()))  // model not in listand not static, parse it for potential buoyancy flags
+        if(!found && !(world_->GetModel(i)->IsStatic()))  // model not in list and not static, parse it for potential buoyancy flags
             ParseNewModel(world_->GetModel(i));
     }
 
@@ -128,16 +127,21 @@ void FreeFloatingFluidPlugin::Update()
     }
 
     // here buoy_links is up-to-date with the links that are subject to buoyancy, let's apply it
-    physics::LinkPtr link;
-    math::Vector3 actual_force, cob_position, velocity_difference, torque;
+    math::Vector3 actual_force, cob_position, velocity_difference;
     double signed_distance_to_surface;
-    for( std::vector<link_st>::iterator link_it = buoyant_links_.begin(); link_it!=buoyant_links_.end();++link_it)
+    for(std::vector<link_st>::iterator link_it = buoyant_links_.begin(); link_it!=buoyant_links_.end();++link_it)
     {
         // Update buoyancy if variable
-        if(link_it->model_name == variable_link_name_)
+        for(unsigned int i=0; i < variable_links_.size(); ++i)
         {
-          link_it->buoyant_force = -buoyant_compensation_* link_it->link->GetInertial()->GetMass() * world_->GetPhysicsEngine()->GetGravity();
+          if(link_it->link->GetName() == variable_links_[i].link_name)
+          {
+              link_it->buoyant_force = -variable_links_[i].buoyant_compensation *
+                      link_it->link->GetInertial()->GetMass() *
+                      world_->GetPhysicsEngine()->GetGravity();
+          }
         }
+
         // get world position of the center of buoyancy
         cob_position = link_it->link->GetWorldPose().pos + link_it->link->GetWorldPose().rot.RotateVector(link_it->buoyancy_center);
         // start from the theoretical buoyancy force
@@ -212,8 +216,6 @@ void FreeFloatingFluidPlugin::Update()
     }
 }
 
-
-
 void FreeFloatingFluidPlugin::ParseNewModel(const physics::ModelPtr &_model)
 {
     // define new model structure: name / pointer / publisher to odometry
@@ -229,7 +231,7 @@ void FreeFloatingFluidPlugin::ParseNewModel(const physics::ModelPtr &_model)
     if(!rosnode_->hasParam("/" + _model->GetName() + "/" + description_))
         return;
 
-    const unsigned int previous_link_number = buoyant_links_.size();
+    const unsigned int previous_link_number = (const unsigned int) buoyant_links_.size();
     std::string urdf_content;
     rosnode_->getParam("/" + _model->GetName() + "/" + description_, urdf_content);
     // parse actual URDF as XML (that's ugly) to get custom buoyancy tags
@@ -252,12 +254,11 @@ void FreeFloatingFluidPlugin::ParseNewModel(const physics::ModelPtr &_model)
         {
             // find corresponding sdf model link if any
             found = false;
-            for(link_index = 0; link_index < _model->GetLinks().size(); ++link_index)
-            {
-                if(urdf_node->ToElement()->Attribute("name") == _model->GetLinks()[link_index]->GetName())
-                {
+            const physics::Link_V &model_links = _model->GetLinks();
+            for(link_index = 0; link_index < model_links.size(); ++link_index) {
+                if (urdf_node->ToElement()->Attribute("name") == model_links[link_index]->GetName()) {
                     found = true;
-                    sdf_link = _model->GetLinks()[link_index];
+                    sdf_link = model_links[link_index];
                     break;
                 }
             }
@@ -270,15 +271,15 @@ void FreeFloatingFluidPlugin::ParseNewModel(const physics::ModelPtr &_model)
                     {
                         // this link is subject to buoyancy, create an instance
                         link_st new_buoy_link;
-                        new_buoy_link.model_name = _model->GetName();            // in case this model is deleted
-                        new_buoy_link.link =  sdf_link;    // to apply forces
+                        new_buoy_link.model_name = _model->GetName();   // in case this model is deleted
+                        new_buoy_link.link =  sdf_link;                 // to apply forces
                         new_buoy_link.limit = .1;
 
-                        // get data from urdf
                         // default values
                         new_buoy_link.buoyancy_center = sdf_link->GetInertial()->GetCoG();
                         new_buoy_link.linear_damping = new_buoy_link.angular_damping = 5 * math::Vector3::One * sdf_link->GetInertial()->GetMass();
 
+                        // get data from urdf
                         compensation = 0;
                         for(buoy_node = link_node->FirstChild(); buoy_node != 0; buoy_node = buoy_node->NextSibling())
                         {
@@ -288,8 +289,14 @@ void FreeFloatingFluidPlugin::ParseNewModel(const physics::ModelPtr &_model)
                                 compensation = atof(buoy_node->ToElement()->GetText());
                             else if(buoy_node->ValueStr() == "variable")
                             {
-                                variable_link_name_ = new_buoy_link.model_name;
-                                ROS_INFO("Found variable buoyancy %s", variable_link_name_.c_str());
+                                link_var new_link_var;
+                                new_link_var.link_name = new_buoy_link.link->GetName();
+                                ROS_INFO("Found variable buoyancy %s", new_link_var.link_name.c_str());
+
+                                std::stringstream ss(buoy_node->ToElement()->Attribute("compensation"));
+                                ss >> compensation;
+
+                                variable_links_.push_back(new_link_var);
                             }
                             else if(buoy_node->ValueStr() == "limit")
                             {
@@ -325,7 +332,8 @@ void FreeFloatingFluidPlugin::ParseNewModel(const physics::ModelPtr &_model)
     if(previous_link_number == buoyant_links_.size())
         ROS_INFO_NAMED("Buoyancy plugin", "No links subject to buoyancy inside %s", _model->GetName().c_str());
     else
-        ROS_INFO_NAMED("Buoyancy plugin", "Added %i buoy links from %s", (int) buoyant_links_.size()-previous_link_number, _model->GetName().c_str());
+        ROS_INFO_NAMED("Buoyancy plugin", "Added %i buoy links from %s",
+                       (int) buoyant_links_.size()-previous_link_number, _model->GetName().c_str());
 }
 
 void FreeFloatingFluidPlugin::RemoveDeletedModel(std::vector<model_st>::iterator &_model_it)
@@ -352,14 +360,22 @@ void FreeFloatingFluidPlugin::FluidVelocityCallBack(const geometry_msgs::Vector3
     fluid_velocity_.Set(_msg->x, _msg->y, _msg->z);
 }
 
-void FreeFloatingFluidPlugin::BuoyancyCallBack(const std_msgs::Float32ConstPtr &_msg)
+void FreeFloatingFluidPlugin::BuoyancyCallBack(const sensor_msgs::JointStateConstPtr &_msg)
 {
+    if(_msg->name.size() != _msg->position.size())
+    {
+        ROS_WARN("Received inconsistent thruster command, name and position dimension do not match");
+        return;
+    }
+
     // store buoyancy
-    buoyant_compensation_ = _msg->data;
+    for(unsigned int i=0; i < variable_links_.size(); ++i)
+    {
+      for(unsigned int j=0; j < _msg->name.size(); ++j)
+      {
+        if(variable_links_[i].link_name == _msg->name[j])
+          variable_links_[i].buoyant_compensation = _msg->position[j];
+      }
+    }
 }
-
-
-
-
-
-}
+} // namespace gazebo
