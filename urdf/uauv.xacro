@@ -4,9 +4,9 @@
 
   <!-- Body properties -->
   <xacro:property name="body_mass"        value="10"/>
-  <xacro:property name="body_radius"      value="0.065"/>
-  <xacro:property name="body_length"      value="0.667"/>
-  <xacro:property name="X_cog"            value="-0.55"/>
+  <xacro:property name="body_radius"      value="0.05"/>
+  <xacro:property name="body_length"      value="1.163"/>
+  <xacro:property name="X_cog"            value="-0.45"/>
 
   <!-- Variable buoyancy link -->
   <xacro:macro name="buoyancy_link" params="name xyz">
@@ -74,9 +74,9 @@
     </visual>
 
     <collision>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <origin xyz="0 0 0" rpy="0 ${PI/2} 0"/>
       <geometry>
-        <mesh filename="package://smtu_uauv/objects/uauv.dae"/>
+        <cylinder radius="${body_radius}" length="${body_length}"/>
       </geometry>
     </collision>
 
@@ -100,6 +100,6 @@
     </buoyancy>
   </link>
 
-  <xacro:buoyancy_link name="front" xyz="-0.33 0 0"/>
-  <xacro:buoyancy_link name="rear" xyz="0.33 0 0"/>         
+  <xacro:buoyancy_link name="front" xyz="-0.474 0 0"/>
+  <xacro:buoyancy_link name="rear" xyz="0.54 0 0"/>         
 </robot>
