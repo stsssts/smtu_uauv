@@ -69,7 +69,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="package://smtu_uauv/objects/uauv.dae"/>
+        <mesh filename="package://smtu_uauv/objects/uauv.stl"/>
       </geometry>
     </visual>
 

@@ -1,28 +1,20 @@
 <?xml version="1.0"?>
 <launch>
+  <arg name="uwsim" default="true"/>
+
   <!-- Launch Gazebo with underwater world -->
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
-    <arg name="gui" value="true" />
+    <arg name="gui" value="false" if="$(arg uwsim)"/>
     <arg name="paused" value="false"/>
     <arg name="world_name" 
       value="$(find smtu_uauv)/world/underwater.world"/>
   </include>
 
+  <!-- include gazebo spawner (generated while parsing uwsim launcher) -->
+  <include file="$(find smtu_uauv)/launch/uwsim_spawner.launch"/>
 
-  <!-- spawn in Gazebo with GUI -->
   <group ns="uauv">
-    <param name="robot_description" 
-           command="$(find xacro)/xacro --inorder 
-                    $(find smtu_uauv)/urdf/uauv.xacro"/>
-
-    <node name="spawner"
-          pkg="gazebo_ros" 
-          type="spawn_model" 
-          respawn="false"
-          output="screen" 
-          args="-urdf -model uauv -param robot_description
-                -x 0 -y 0 -z 0 -R 0 -P 0 -Y 0"/>
-
+    <!-- Load controller configurations (vehicle and arm) from YAML file to parameter server -->
     <rosparam file="$(find smtu_uauv)/config/uauv.yaml"
               command="load"/>
 
@@ -30,13 +22,11 @@
     <!--node name="pid_control" pkg="freefloating_gazebo"
              type="pid_control" output="screen"/-->
 
-
-
     <!-- Manual thrusetrs control -->
     <group ns="thrusters">
       <param name="robot_description" 
              command="$(find xacro)/xacro --inorder 
-                      $(find smtu_uauv)/urdf/uauv_dummy.urdf"/>
+                      $(find smtu_uauv)/urdf/uauv_thrusters_dummy.urdf"/>
 
       <node name="joint_state_publisher" 
             pkg="joint_state_publisher" 
@@ -49,6 +39,7 @@
     </group>
   </group>
 
+  <!-- Manual buoyants control -->
   <group ns="buoyants">
     <param name="robot_description" 
       command="$(find xacro)/xacro --inorder 
@@ -62,16 +53,4 @@
       <remap from="joint_states" to="/gazebo/buoyancy_joints"/>        
     </node>
   </group>
-
-  <param name="terrain_description" 
-         command="$(find xacro)/xacro --inorder 
-                  $(find smtu_uauv)/urdf/pool.sdf"/>
-
-  <node name="terrain_spawner" 
-        pkg="gazebo_ros" 
-        type="spawn_model" 
-        respawn="false" 
-        output="screen" 
-        args="-sdf -model terrain -param terrain_description 
-              -x 0 -y 0 -z 0 -R 0 -P 0 -Y 0"/>
 </launch>
