@@ -19,38 +19,22 @@
               command="load"/>
 
     <!-- Launch low-level PID control for body -->
-    <!--node name="pid_control" pkg="freefloating_gazebo"
-             type="pid_control" output="screen"/-->
+    <node name="pid_control" pkg="smtu_uauv"
+             type="smtu_pid_control" output="screen"/>
 
-    <!-- Manual thrusetrs control -->
-    <group ns="thrusters">
+    <!-- Manual buoyants control -->
+    <group ns="buoyants">
       <param name="robot_description" 
              command="$(find xacro)/xacro --inorder 
-                      $(find smtu_uauv)/urdf/uauv_thrusters_dummy.urdf"/>
-
-      <node name="joint_state_publisher" 
-            pkg="joint_state_publisher" 
-            type="joint_state_publisher" 
+                      $(find smtu_uauv)/urdf/uauv_buoyancy_dummy.urdf"/>
+      <node name="joint_state_publisher"
+            pkg="joint_state_publisher"
+            type="joint_state_publisher"
             respawn="true">
 
         <param name="use_gui" value="True"/>
-        <remap from="joint_states" to="/uauv/thruster_command"/>
+        <remap from="joint_states" to="/gazebo/buoyancy_joints"/>        
       </node>
     </group>
-  </group>
-
-  <!-- Manual buoyants control -->
-  <group ns="buoyants">
-    <param name="robot_description" 
-      command="$(find xacro)/xacro --inorder 
-      $(find smtu_uauv)/urdf/uauv_buoyancy_dummy.urdf"/>
-    <node name="joint_state_publisher"
-      pkg="joint_state_publisher"
-      type="joint_state_publisher"
-      respawn="true">
-
-      <param name="use_gui" value="True"/>
-      <remap from="joint_states" to="/gazebo/buoyancy_joints"/>        
-    </node>
   </group>
 </launch>

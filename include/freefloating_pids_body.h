@@ -1,4 +1,4 @@
-#ifndef FREEFLOATINGBODYPID_H
+﻿#ifndef FREEFLOATINGBODYPID_H
 #define FREEFLOATINGBODYPID_H
 
 #include <ros/ros.h>
@@ -10,12 +10,13 @@
 #include <geometry_msgs/TwistStamped.h>
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/Geometry>
+#include <tf_conversions/tf_eigen.h>
 
 class FreeFloatingBodyPids : public FreeFloatingPids
 {
 
 public:
-    void Init(const ros::NodeHandle &_node, ros::Duration&_dt, const std::vector<std::string>&_controlled_axes);
+    void Init(const ros::NodeHandle &_node, ros::Duration &_dt, const std::vector<std::string> &_controlled_axes);
 
     // parse received position setpoint
     void PositionSPCallBack(const geometry_msgs::PoseStampedConstPtr& _msg);
@@ -32,17 +33,17 @@ public:
     inline geometry_msgs::Wrench WrenchCommand() {return wrench_command_;}
 
 private:
-
     // errors are stored in Vector3
     Eigen::Vector3d pose_lin_error_, pose_ang_error_, velocity_lin_error_, velocity_ang_error_;
     // velocities also
     Eigen::Vector3d velocity_lin_setpoint_, velocity_ang_setpoint_, velocity_lin_measure_, velocity_ang_measure_;
     // poses are stored in Vector3 and Quaternion
-    Eigen::Vector3d pose_lin_setpoint_, pose_lin_measure_;
+    Eigen::Vector3d pose_lin_setpoint_, pose_lin_measure_, old_pose_lin_setpoint_;
     Eigen::Quaterniond pose_ang_setpoint_, pose_ang_measure_inv_;
     // wrench command
     geometry_msgs::Wrench wrench_command_;
 
+    bool setpoint_changed_, angle_changing_;
 };
 
 #endif // FREEFLOATINGBODYPID_H
