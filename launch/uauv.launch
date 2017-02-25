@@ -6,8 +6,7 @@
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
     <arg name="gui" value="false" if="$(arg uwsim)"/>
     <arg name="paused" value="false"/>
-    <arg name="world_name" 
-      value="$(find smtu_uauv)/world/underwater.world"/>
+    <arg name="world_name" value="$(find smtu_uauv)/world/underwater.world"/>
   </include>
 
   <!-- include gazebo spawner (generated while parsing uwsim launcher) -->
@@ -15,26 +14,31 @@
 
   <group ns="uauv">
     <!-- Load controller configurations (vehicle and arm) from YAML file to parameter server -->
-    <rosparam file="$(find smtu_uauv)/config/uauv.yaml"
-              command="load"/>
+    <rosparam file="$(find smtu_uauv)/config/uauv.yaml" command="load"/>
 
-    <!-- Launch low-level PID control for body -->
-    <node name="pid_control" pkg="smtu_uauv"
-             type="smtu_pid_control" output="screen"/>
+    <!-- Load teleoperation configurations -->
+    <rosparam file="$(find smtu_uauv)/config/teleop.yaml" command="load"/>
 
-    <!-- Manual buoyants control -->
-    <group ns="buoyants">
-      <param name="robot_description" 
-             command="$(find xacro)/xacro --inorder 
-                      $(find smtu_uauv)/urdf/uauv_buoyancy_dummy.urdf"/>
-      <node name="joint_state_publisher"
-            pkg="joint_state_publisher"
-            type="joint_state_publisher"
-            respawn="true">
-
-        <param name="use_gui" value="True"/>
-        <remap from="joint_states" to="/gazebo/buoyancy_joints"/>        
-      </node>
-    </group>
+    <!-- Teleoperation node -->
+    <node pkg="smtu_uauv" type="teleop" name="teleop"/>
   </group>
+
+  <!-- Joystick driver -->
+  <node respawn="true" pkg="joy" type="joy_node" name="joy" >
+      <param name="dev" type="string" value="/dev/input/js0" />
+      <param name="deadzone" value="0.12" />
+  </node>
+
+  <!-- Manual buoyants control -->
+  <param name="robot_description" command="$(find xacro)/xacro --inorder
+         $(find smtu_uauv)/urdf/uauv_buoyancy_dummy.urdf"/>
+  <node name="joint_state_publisher"
+        pkg="joint_state_publisher"
+        type="joint_state_publisher"
+        respawn="true">
+
+    <param name="use_gui" value="True"/>
+    <remap from="joint_states" to="/gazebo/buoyancy_joints"/>
+  </node>
+
 </launch>

@@ -31,7 +31,7 @@
           respawn="true"/>
 
     <!-- launch gazebo without gui -->
-    <include file="$(find smtu_uauv)/launch/uauv.launch"/>    
+    <include file="$(find smtu_uauv)/launch/uauv.launch"/>
   </group>
 
 </launch>

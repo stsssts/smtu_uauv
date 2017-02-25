@@ -47,18 +47,22 @@
       <!-- For each thruster, give the map to 
            XYZ+RPY and the maximum effort -->
       <thruster>
+        <name>v_back</name>
         <map>0 0 -1 0 -0.20168 0</map>
         <effort>30</effort>
       </thruster>
       <thruster>
+        <name>v_front</name>
         <map>0 0 -1 0 0.10238 0</map>
         <effort>30</effort>
       </thruster>
       <thruster>
+        <name>h_right</name>
         <map>-1 0 0 0 0 0.05828</map>
         <effort>30</effort>
       </thruster>
       <thruster>
+        <name>h_left</name>
         <map>-1 0 0 0 0 -0.05828</map>
         <effort>30</effort>
       </thruster>

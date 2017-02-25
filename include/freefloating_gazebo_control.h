@@ -25,15 +25,12 @@ public:
     {
         event::Events::DisconnectWorldUpdateBegin(this->update_event_);
         rosnode_.shutdown();
-        //    delete rosnode_;
     }
 
     virtual void Load(physics::ModelPtr _model, sdf::ElementPtr _sdf);
     virtual void Update();
 
 private:
-    // parse a Vector3 string
-    void ReadVector3(const std::string &_string, math::Vector3 &_vector);
     // parse received joint command (joint states)
     void JointCommandCallBack(const sensor_msgs::JointStateConstPtr &_msg)
     {
@@ -43,15 +40,12 @@ private:
         joint_command_ = *_msg;
         joint_command_received_ = true;
     }
-    // parse received body command
-    void BodyCommandCallBack(const geometry_msgs::WrenchConstPtr& _msg);
+
     // parse received thruster command
     void ThrusterCommandCallBack(const sensor_msgs::JointStateConstPtr& _msg);
+
     // parse switch service
     bool SwitchService(std_srvs::EmptyRequest &req, std_srvs::EmptyResponse &res);
-
-    // no pseudo-inverse in Eigen ?
-    void ComputePseudoInverse(const Eigen::MatrixXd &_M, Eigen::MatrixXd &_pinv_M);
 
 private:
     // -- general data ----------------------------------------
@@ -60,7 +54,6 @@ private:
     ros::CallbackQueue callback_queue_;
     physics::ModelPtr model_;
     event::ConnectionPtr update_event_;
-    ros::ServiceServer switch_service_;
     bool controller_is_running_;
     double update_T_;
     double z_surface_;
@@ -69,9 +62,8 @@ private:
     // model body data
     physics::LinkPtr body_;
     Eigen::MatrixXd thruster_map_;
-    Eigen::MatrixXd thruster_inverse_map_;
     std::vector<double> thruster_max_command_;
-    bool control_body_, wrench_control_;
+    bool control_body_;
 
     // thruster control
     std::vector<unsigned int> thruster_steer_idx_, thruster_fixed_idx_;

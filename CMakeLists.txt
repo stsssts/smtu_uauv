@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   control_toolbox
   rostime
   nav_msgs
+  joy
 )
 
 find_package(gazebo REQUIRED)
@@ -54,9 +55,6 @@ target_link_libraries(smtu_freefloating_gazebo_fluid ${catkin_LIBRARIES} ${GAZEB
 add_library(smtu_freefloating_gazebo_control src/freefloating_gazebo_control.cpp include/freefloating_gazebo_control.h)
 target_link_libraries(smtu_freefloating_gazebo_control ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
 
-# node to perform PID control for body (thrusters) and joints
-add_executable(smtu_pid_control src/freefloating_pids_main.cpp
-src/freefloating_pids.cpp include/freefloating_pids.h
-src/freefloating_pids_body.cpp include/freefloating_pids_body.h
-src/freefloating_pids_joint.cpp include/freefloating_pids_joint.h)
-target_link_libraries(smtu_pid_control ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES})
+# teleoperation node
+add_executable(teleop src/teleop.cpp)
+target_link_libraries(teleop ${catkin_LIBRARIES})
